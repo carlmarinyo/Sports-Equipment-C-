@@ -3,14 +3,21 @@
 #include <vector>
 #include <string>
 using namespace std;
+class Customer;
 class SportsEquipment {
 
 	vector<int> EquipmentId;
 	vector<string>EquipmentName;
 	vector<string>Type;
-	vector<string>Brand;
+	vector<string>Brand;              //datas for sports equipment
 	vector<int>NumberofCopies;
 	int lastId;
+	
+	//value holder for loading data on the customer adt
+	vector<int> CustomerId;
+	vector<string> Name;
+	vector<string> Address;
+
 public:
 	SportsEquipment() {
 		loadFile("equipment.txt");
@@ -20,6 +27,7 @@ public:
 		else {
 			lastId = EquipmentId.back();
 		}
+		loadCustomer("customer.txt");
 	}
 
 	void insertEquipment() {
@@ -48,50 +56,75 @@ public:
 		saveFile("equipment.txt");
 	}
 
-	void RentEquipment() {
-	
-	
-		system("cls");
-
-		cout << "[2]Rent a Sports Equipment\n\n";
-		char choice;
-
-		do {
-			int rentId;
-			cout << "Sports Equipment ID: ";
-			cin >> rentId;
-			bool found;
-			
-			for (int i = 0; i < EquipmentId.size(); i++) {
-				if (rentId == EquipmentId[i]) {
-					found = true;
-					if (NumberofCopies[i] == 0) {
-						cout << "No more copies for this Sport Equipment.";
-					}
-
-					else {
-						cout << "Equipment Name: " << EquipmentName[i];
-						NumberofCopies[i]--;
-						cout << "\nNumber of Copies: " << NumberofCopies[i];
-						saveFile("equipment.txt");
-						break;
-
-					}
-
+  void RentEquipment() {
+        system("cls");
+        
+        cout << "[2] Rent a Sports Equipment\n\n";
+        char choice;
+        do {
+        	
+            int rentId,cId;
+            cout<<"Customer Id: ";
+            cin>>cId;
+            bool cfound = false;
+            for (int i = 0; i < CustomerId.size();i++) {
+            	if (cId == CustomerId[i]) {
+            		cout<<"Name: "<<Name[i]<<endl;
+            		cout<<"Address: "<<Address[i]<<endl;
 				}
+				
+			}
 			
-			}
-			if (!found) {
-				cout<<"Not found.";
-			}
+			
+			
+			
+			
+            cout << "Sports Equipment ID: ";
+            cin >> rentId;
+            bool found = false;
 
+            for (int i = 0; i < EquipmentId.size(); i++) {
+                if (rentId == EquipmentId[i]) {
+                    found = true;
+                    if (NumberofCopies[i] == 0) {
+                        cout << "No more copies for this Sports Equipment.";
+                    } else {
+                        cout << "Equipment Name: " << EquipmentName[i];
+                        NumberofCopies[i]--;
+                        cout << "\nNumber of Copies: " << NumberofCopies[i];
+                        saveFile("equipment.txt");
 
-			cout << "\nRent another Equipment? ";
-			cin >> choice;
-			cout << endl;
-		} while (choice != 'N' && choice != 'n');
-	}
+                        // Record rental in customer's rental history
+                        RecordRental(cId, rentId);
 
+                        break;
+                    }
+                }
+            }
+
+            if (!found) {
+                cout << "Equipment with ID " << rentId << " not found.\n";
+            }
+
+            cout << "\nRent another Equipment? (Y/N): ";
+            cin >> choice;
+            cout << endl;
+        } while (choice == 'Y' || choice == 'y');
+    }
+
+     
+    void RecordRental(int customerId, int equipmentId) {
+        // Append customerId and equipmentId to a text file or database for rental history
+        ofstream rentalFile("customer-rent.txt", ios::app);
+        if (rentalFile.is_open()) {
+            rentalFile << customerId << " " << equipmentId << endl;
+            rentalFile.close();
+        } else {
+            cout << "Unable to record rental history." << endl;
+        }
+    }
+    
+    
 	void showEquipmentDetails() {
 		ifstream inFile("equipment.txt");
 		if (inFile.is_open()) {
@@ -162,8 +195,7 @@ public:
 			cout << "Can't Open file'" << endl;
 		}
 	}
-
-
+	
 
 
 	void saveFile(const string& filename) {
@@ -182,7 +214,34 @@ public:
 			cout << "File might not be existing or cannot be accessed." << endl;
 		}
 	}
-
+	
+	void loadCustomer(const string& filename) {
+    ifstream inFile(filename);
+    if (inFile.is_open()) {
+        CustomerId.clear();
+        Name.clear();
+        Address.clear();
+        
+        int id;
+        string name, address;
+        while (inFile >> id) {
+            inFile.ignore(); // Consume newline after id
+            getline(inFile, name); // Read name
+            getline(inFile, address); // Read address
+            
+            CustomerId.push_back(id);
+            Name.push_back(name);
+            Address.push_back(address);
+            
+            // Skip blank line separator if present
+            string line;
+            getline(inFile, line);
+        }
+        inFile.close();
+    } else {
+        cout << "Unable to open file: " << filename << endl;
+    }
+}
 
 	void loadFile(const string& filename) {
 		ifstream inFile(filename);
@@ -289,6 +348,27 @@ class Customer {
 			}
 			
 		}
+			void displayAllCustomers() {
+				cout<<"\nAll Customers\n";
+	for (size_t i = 0; i < CustomerId.size(); ++i) {
+            cout << CustomerId[i] << "\t"
+                 << Name[i] << "\t\t"
+                 << Address[i] << "\t\t"<<endl;
+        }
+	}
+			
+			
+			bool customerExists(int customerId) {
+        for (int i = 0; i < CustomerId.size(); ++i) {
+            if (CustomerId[i] == customerId) {
+                return true;
+            }
+        }
+        return false;
+    }
+			 void listRentedVideos(int customerId) {
+        // Implementation to list rented videos
+    }
 			
 			
 			
@@ -365,7 +445,7 @@ int main(int argc, char** argv) {
 			sport.insertEquipment();
 			break;
 		case 2:
-			sport.RentEquipment();
+            sport.RentEquipment();
 			break;
 		case 3:
 			break;
@@ -397,7 +477,7 @@ int main(int argc, char** argv) {
 				customer.showDetails();
 				break;
 			case 3:
-//				customer.displayAllCustomers();
+				customer.displayAllCustomers();
 				break;
 			case 4:
 				// operation for list all equipment rented by a customer
